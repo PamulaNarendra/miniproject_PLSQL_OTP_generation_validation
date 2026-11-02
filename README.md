@@ -1,0 +1,2 @@
+# miniproject_PLSQL_OTP_generation_validation
+Generating and validating the OTP
