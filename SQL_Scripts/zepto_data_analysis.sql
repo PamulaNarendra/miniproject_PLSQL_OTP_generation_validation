@@ -62,3 +62,42 @@ end
 
 round(avg(DISCOUNTPERCENT),2) as avg_discount
 FROM zepto_data_analysis;
+-----------------------------
+--Which category has the highest average discount?
+select category,round(avg(DISCOUNTPERCENT),2) as avg_discount  from zepto_data_analysis group by category order by avg_discount desc;
+
+--Which category has the highest average MRP?'
+select category,round(avg(MRP),2) as avg_mrp  from zepto_data_analysis group by category order by avg_mrp desc;
+
+--Find the top 10 products with the highest discount percentages.
+Select name,max(DISCOUNTPERCENT) as max_discount from zepto_data_analysis group by name order by max_discount desc OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY; 
+
+--Which products have an MRP greater than ₹500?
+select distinct name,mrp from zepto_data_analysis where mrp>500;
+
+--Which categories have more than 100 products?
+select category,count(category) as cnt from zepto_data_analysis group by category having cnt>100;
+
+--What is the total inventory quantity available in each category?
+select category,sum(quantity) as inventory_quantity from zepto_data_analysis WHERE outofstock = 0 group by category;
+
+--Which products have zero available quantity?
+select name,quantity from zepto_data_analysis where quantity=0;
+
+--Which products have discounts between 10% and 30%?
+select distinct name as product_name,DISCOUNTPERCENT from zepto_data_analysis where DISCOUNTPERCENT between 10 and 30;
+
+--Classify products into High, Medium, and Low discount categories.
+select name,DISCOUNTPERCENT,
+case when DISCOUNTPERCENT >=30 then 'HIGH'
+when DISCOUNTPERCENT >=15 then 'MEDIUM'
+else 'LOW'
+end as discount_category
+from zepto_data_analysis;
+
+
+--Which products have selling prices higher than their category's average selling price?
+select name,DISCOUNTEDSELLINGPRICE as product from zepto_data_analysis p1
+where DISCOUNTEDSELLINGPRICE >
+(select round(avg(DISCOUNTEDSELLINGPRICE),2) as avg_selling_price from zepto_data_analysis p2
+where p2.category=p1.category);
