@@ -101,3 +101,45 @@ select name,DISCOUNTEDSELLINGPRICE as product from zepto_data_analysis p1
 where DISCOUNTEDSELLINGPRICE >
 (select round(avg(DISCOUNTEDSELLINGPRICE),2) as avg_selling_price from zepto_data_analysis p2
 where p2.category=p1.category);
+
+
+----Find the top 3 most expensive products in each category.
+SELECT category, name, mrp, rnk
+FROM (
+    SELECT 
+        category,
+        name,
+        mrp,
+        DENSE_RANK() OVER (PARTITION BY category ORDER BY mrp DESC) AS rnk 
+    FROM zepto_data_analysis
+)
+WHERE rnk < 4;
+-----------------------------------------
+
+---Find products whose discount is greater than their category's average discount.
+select name,DISCOUNTPERCENT from zepto_data_analysis P1 where DISCOUNTPERCENT >
+(select round(avg(DISCOUNTPERCENT),2) from zepto_data_analysis p2
+where p2.category=p1.category);
+
+--------------------------------
+--Identify products with the highest difference between MRP and selling price.
+select distinct name,mrp,discountedsellingprice,(mrp-discountedsellingprice) as diff from zepto_data_analysis
+order by diff desc
+offset 0 rows fetch next 10 rows only;
+-------------------------------------------
+--Calculate the percentage of out-of-stock products in each category.
+
+select out_of_stock_count,total_cnt,category,round((out_of_stock_count)/(total_cnt),2)*100 as outofstock_per from
+(select category,count(name)as out_of_stock_count,outofstock,(select count(name) from zepto_data_analysis p2 where p2.category=p1.category) as total_cnt from zepto_data_analysis p1
+group by category,outofstock
+having outofstock is TRUE)
+
+
+-----Find categories where the out-of-stock percentage exceeds 10%.
+
+select out_of_stock_count,total_cnt,category,round((out_of_stock_count)/(total_cnt),2)*100 as outofstock_per from
+(select category,count(name)as out_of_stock_count,outofstock,(select count(name) from zepto_data_analysis p2 where p2.category=p1.category) as total_cnt from zepto_data_analysis p1
+group by category,outofstock
+having outofstock is TRUE)
+where (round((out_of_stock_count)/(total_cnt),2)*100) > 10;
+
