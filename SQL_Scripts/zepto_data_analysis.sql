@@ -143,3 +143,61 @@ group by category,outofstock
 having outofstock is TRUE)
 where (round((out_of_stock_count)/(total_cnt),2)*100) > 10;
 
+---- Calculate the average discount for each product category and rank them.
+select category,dc,dense_rank() over(order by dc desc) as rank from(
+select category,avg(DISCOUNTPERCENT) as dc from zepto_data_analysis
+group by category
+order by dc);
+
+-----Find the top 5 products by potential savings (MRP minus selling price).
+select distinct name,mrp,DISCOUNTEDSELLINGPRICE,(mrp-DISCOUNTEDSELLINGPRICE) as Potential_saving from zepto_data_analysis
+order by Potential_saving desc
+offset 0 rows fetch next 5 rows only;
+
+---Which categories have the highest out-of-stock rates?
+
+select category, sum(
+case when outofstock is true then 1
+else 0
+end) as outofstock_count,count(*) as total from zepto_data_analysis
+group by category
+order by outofstock_count desc;
+
+----Which categories offer the highest average discounts?
+select category,round(avg(DISCOUNTPERCENT),2) as avg_discount from zepto_data_analysis
+group by category
+order by avg_discount desc;
+
+----Which products have high MRP but low discounts?
+select distinct name,mrp,DISCOUNTPERCENT from zepto_data_analysis
+order by DISCOUNTPERCENT asc,mrp desc;
+
+-----Which products have high discounts but are out of stock?
+select distinct name,DISCOUNTPERCENT,outofstock from zepto_data_analysis
+where outofstock = 1
+order by DISCOUNTPERCENT desc;
+
+---Which categories have both high average prices and high out-of-stock rates?
+select category,avg(DISCOUNTEDSELLINGPRICE) as avg_sp,count(
+case
+when outofstock=1 then 1
+else 0
+end) as cnt from zepto_data_analysis
+group by category
+order by cnt desc,avg_sp desc;
+
+--Which products have unusually low or zero prices?
+SELECT name, DISCOUNTEDSELLINGPRICE
+FROM zepto_data_analysis
+WHERE DISCOUNTEDSELLINGPRICE <
+(
+    SELECT AVG(DISCOUNTEDSELLINGPRICE) * 0.5
+    FROM zepto_data_analysis
+);
+
+---Which categories have the greatest potential savings(MRP minus selling price) for customers?
+select category,sum(mrp) as sum_mrp,sum(DISCOUNTEDSELLINGPRICE) as sum_sp,sum(mrp-DISCOUNTEDSELLINGPRICE) as sp from zepto_data_analysis
+group by category
+order by sp desc
+
+ 
